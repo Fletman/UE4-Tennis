@@ -36,6 +36,7 @@ public:
 private:
 	uint8 spinType; //ball spin type
 	uint8 bounces; //bounce count
+	uint8 lastToHit; //flag representing last side to hit ball
 	bool inRally; //whether ball is in rally, affects bounce calculations and all stemming from that
 	ABallTarget *homeTgt; //reference to actor used for homing
 
@@ -49,6 +50,11 @@ protected:
 		class UProjectileMovementComponent *Movement;
 
 public:
+	UFUNCTION(BlueprintCallable)
+		//get ball mesh
+		UStaticMeshComponent* GetMesh()
+		{return this->BallMesh;}
+
 	UFUNCTION(BlueprintCallable)
 		//set ball state
 		void SetState(bool newState)
@@ -64,6 +70,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 		//collision handler
 		uint8 Bounce();
+
+	UFUNCTION(BlueprintCallable)
+		//set last to hit
+		void SetLastHit(uint8 prevHit)
+		{lastToHit = prevHit;}
+
+	UFUNCTION(BlueprintCallable)
+		//retrieve last hit
+		uint8 GetLastHit()
+		{return this->lastToHit;}
 
 	UFUNCTION(BlueprintCallable)
 		//set ball's flight path

@@ -10,13 +10,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "TennisGameModeBase.generated.h"
 
-/*macros to define players/teams/sides/whatever because I couldn't think of better names*/
-#define HEADS 0
-#define TAILS 1
 
-/**
- * 
- */
 UCLASS()
 class TENNIS_API ATennisGameModeBase : public AGameModeBase
 {
@@ -24,7 +18,6 @@ class TENNIS_API ATennisGameModeBase : public AGameModeBase
 	
 public:
 	ATennisGameModeBase();
-	~ATennisGameModeBase();
 
 private:
 	
@@ -35,6 +28,8 @@ protected:
 
 	UWorld *World;
 	ATennisBall *Ball;
+
+	TArray<class ATennisPlayer*> Players;
 
 	bool inTiebreak = false;
 	uint8 setsPlayed = 0;
@@ -49,6 +44,10 @@ protected:
 		unsigned short tiebreak[2]; //points in a tiebreak (if necessary)
 	} score;
 	score Scoreboard; //score tracker
+
+	//stores references of players in world to Players TArray
+	//NOTE: default method only supports singles gamemodes, must be overridden for doubles modes
+	virtual void GetPlayers();
 
 	UPROPERTY(EditAnywhere, Category = "Match Settings")
 		//max number of games in a set (win by two)
@@ -75,8 +74,14 @@ protected:
 
 	void UpdateGames(uint8 winner, uint8 loser);
 	void UpdateSets(uint8 winner);
+	virtual void SetupNewPoint(); //reset actors to start new point
 
 public:
+	UFUNCTION(BlueprintCallable)
+		//on bounce, ball reports its position for in-bounds check
+		//NOTE: must be overridden for doubles game-modes, default only checks singles bounds
+		virtual void BoundsCheck(FVector BallLocation);
+
 	UFUNCTION(BlueprintCallable)
 		//update point, will cascade into other score updates as necessary
 		void UpdatePoints(uint8 side);

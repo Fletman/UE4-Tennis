@@ -29,6 +29,7 @@ private:
 	uint8 spinSetting;
 	FVector impulseSetting;
 	ABallTarget *Target;
+	ATennisPlayer *Owner;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Mesh", meta = (AllowPrivateAccess = "true"))
@@ -56,4 +57,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Swing")
 		ABallTarget* GetTarget()
 		{return this->Target;}
+
+
+	UFUNCTION(BlueprintCallable, Category = "Owner")
+		void SetRaqOwner(ATennisPlayer *own)
+		{this->Owner = own;}
+
+	UFUNCTION(BlueprintCallable, Category = "Owner")
+		ATennisPlayer* GetRaqOwner()
+		{return this->Owner;}
 };

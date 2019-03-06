@@ -29,7 +29,7 @@ void ATennisBall::Tick(float DeltaTime)
 
 }
 
-//collision handler
+//called when ball collides with court (see: TennisBallBP)
 uint8 ATennisBall::Bounce()
 {
 	Movement->bIsHomingProjectile = false;
@@ -41,6 +41,13 @@ uint8 ATennisBall::Bounce()
 		Movement->HomingTargetComponent->UnregisterComponent();
 		Movement->HomingTargetComponent = nullptr;
 		temp->Destroy();
+	}
+
+	//TODO: find better way to detect net collision; this isn't reliable
+	if (this->GetActorLocation().Z > 40) //collision at height above 30 means no contact with ground court, must've hit net
+	{
+		
+		return this->bounces;
 	}
 	
 	return ++this->bounces;
@@ -91,11 +98,15 @@ void ATennisBall::SetPath(uint8 spin, FVector impulse, ABallTarget *tgt)
 	Movement->HomingTargetComponent = tgt->TargetArea;
 
 	Movement->SetVelocityInLocalSpace(impulse); //apply racquet impulse to set ball speed
+	this->bounces = 0; //reset bounce count
 }
 
 //reset ball properties
 void ATennisBall::Reset()
 {
 	this->bounces = 0;
+	this->Movement->Bounciness = 0.75f;
+	this->Movement->ProjectileGravityScale = 1.0f;
+	this->spinType = TOPSPIN;
 	this->Movement->Velocity = FVector(0, 0, 0);
 }

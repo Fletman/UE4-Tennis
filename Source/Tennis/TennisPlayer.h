@@ -6,6 +6,7 @@
 #include "TennisBall.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "TennisPlayer.generated.h"
 
@@ -24,6 +25,10 @@
 #define SLICE_SWING 2
 #define LOB_SWING 3
 #define DROP_SWING 4
+
+/*side flags*/
+#define HEADS 0 //starting X-value < 0
+#define TAILS 1 //starting X-value > 0
 
 //speed of player movement
 //TODO: is this even necessary?
@@ -53,7 +58,8 @@ private:
 	uint32 pressure;
 	
 	uint8 state = SCENE, prevState = SCENE; //flag denoting state of character
-	char side; //flag for character side, used for position calculations (1 or -1)
+	uint8 side; //flag for character side, used for position calculations (1 or -1)
+	int8 currentSwingType = -1; //flag representing current swing pattern for character
 
 	//flag indicating character should square up for hit
 	bool prep = false;
@@ -62,7 +68,7 @@ private:
 	class ATennisRacquet *Racquet = nullptr;
 
 	//calculate directional impulse towards taret
-	FVector CalculateImpulse(ABallTarget *tgt, uint8 swingType);
+	FVector CalculateImpulse(ABallTarget *tgt);
 
 	//get side of court that character is currently on
 	void SetSide();
@@ -88,6 +94,10 @@ protected:
 		//actor mesh
 		TSubclassOf<ATennisRacquet> RacquetRef;
 
+	UPROPERTY(EditAnywhere, Category = "Strike Range")
+		//strike range of player
+		class UCapsuleComponent *StrikeRange;
+
 public:
 	int speedMult = 2;
 	float sideInput = 0, forwardInput = 0; //movement input receivers from a Controller
@@ -98,10 +108,10 @@ public:
 
 	//character movements
 	void Move();
-	void Swing(uint8 type);
+	void Swing();
 
 	//setters for having character get into targeting range
-	void SetPrep();
+	void SetPrep(int8 swingPattern);
 	void UnsetPrep();
 
 	void SetBall(); //set reference to game ball
@@ -136,5 +146,11 @@ public:
 		uint8 GetCharState()
 		{
 			return this->state;
+		}
+
+	UFUNCTION(BlueprintCallable, Category = "Character Side")
+		uint8 GetSide()
+		{
+			return this->side;
 		}
 };

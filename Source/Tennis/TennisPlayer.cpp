@@ -33,6 +33,7 @@ void ATennisPlayer::BeginPlay()
 	BodyMesh = this->GetMesh();
 	Racquet = GetWorld()->SpawnActor<ATennisRacquet>(RacquetRef);
 	BodyMesh->GetSocketByName(TEXT("RightPalm"))->AttachActor(Racquet, BodyMesh);
+	StrikeRange = Cast<UCapsuleComponent>(GetDefaultSubobjectByName(TEXT("Strike Range")));
 	SetBall();
 	SetCharState(RALLY);
 	SetSide();
@@ -102,7 +103,7 @@ void ATennisPlayer::Move()
 }
 
 
-void ATennisPlayer::Swing(uint8 type)
+void ATennisPlayer::Swing()
 {
 	FVector swingImpulse;
 	uint8 spinType;
@@ -110,7 +111,7 @@ void ATennisPlayer::Swing(uint8 type)
 
 	//set animation instance by swing pattern
 	//set ball impulse & spin type by swing pattern
-	switch (type)
+	switch (currentSwingType)
 	{
 	case FLAT_SWING: //set ball path type to flat, swing animation to flat
 		//animation = 
@@ -142,18 +143,21 @@ void ATennisPlayer::Swing(uint8 type)
 		return;
 	}
 
+	char sideModifier; //multiplier for opposite of this character's current side (1 or -1)
+	this->side == HEADS ? sideModifier = 1 : sideModifier = -1;
+
 	//spawn target for ball to home towards
-	FVector tgtPoint = FVector(1100 * (-side), aimX, 27.5);
+	FVector tgtPoint = FVector(1100 * sideModifier, aimX, 27.5);
 	ABallTarget *homingTgt = GetWorld()->SpawnActor<ABallTarget>(Target, tgtPoint, FRotator(0, 0, 0));
 
 	//Racquet->SetSwing(spinType, CalculateImpulse(homingTgt, type), homingTgt); //set swing properties to be applied /if/ racquet contacts ball
-	Ball->SetPath(spinType, CalculateImpulse(homingTgt, type), homingTgt);
+	Ball->SetPath(spinType, CalculateImpulse(homingTgt), homingTgt); //this is temporary, will remove once racquet collisions are properly done
 
 	//this->BodyMesh->PlayAnimation(animation, false);
 	GEngine->AddOnScreenDebugMessage(-1, 4, FColor::Orange, tgtPoint.ToString());
 }
 
-FVector ATennisPlayer::CalculateImpulse(ABallTarget * tgt, uint8 swingType)
+FVector ATennisPlayer::CalculateImpulse(ABallTarget * tgt)
 {
 	FVector tgtLoc = tgt->GetActorLocation();
 	FVector srcLoc = Ball->GetActorLocation();
@@ -171,7 +175,7 @@ FVector ATennisPlayer::CalculateImpulse(ABallTarget * tgt, uint8 swingType)
 	FVector charLoc = this->GetActorLocation();
 
 	//TODO: variable zImpulse
-	switch (swingType)
+	switch (currentSwingType)
 	{
 	case FLAT_SWING:
 		strikeSpeed = 2000;
@@ -232,19 +236,22 @@ FVector ATennisPlayer::CalculateImpulse(ABallTarget * tgt, uint8 swingType)
 
 void ATennisPlayer::SetSide()
 {
-	this->GetActorLocation().X < 0 ? side = -1 : side = 1;
+	this->GetActorLocation().X < 0 ? side = HEADS : side = TAILS;
 }
 
-void ATennisPlayer::SetPrep()
+void ATennisPlayer::SetPrep(int8 newSwingType)
 {
+	this->currentSwingType = newSwingType;
 	prevState = state;
 	state = PREP;
 }
 
 void ATennisPlayer::UnsetPrep()
 {
-	state = prevState;
-	prevState = -1;
+	currentSwingType = -1;
+	state = RALLY; //temporary band-aid to get around other issues, but may keep if no other problems discovered
+	//state = prevState;
+	//prevState = -1;
 }
 
 //train character & camera on game ball
@@ -276,8 +283,12 @@ void ATennisPlayer::TargetLock(AActor *lookTgt)
 
 	this->CameraBoom->SetWorldRotation(FRotator(newPitch, newYaw, 0.0f)); //rotate camera stand about X-axis and Z-axis
 	
-	//for some (unfixable >:/) reason, mesh starting direction is off by 90 deg
-	//this->BodyMesh->SetWorldRotation(FRotator(0.0f, newYaw - 90, 0.0f)); //rotate body mesh to face target
+	//if character isn't moving, rotate body to track ball
+	if (this->GetVelocity().IsNearlyZero())
+	{
+		//for some (unfixable >:/) reason, mesh starting direction is off by 90 deg
+		this->BodyMesh->SetWorldRotation(FRotator(0.0f, newYaw - 90, 0.0f), true); //rotated body mesh to face target
+	}	
 }
 
 //get character into swinging range
@@ -286,25 +297,31 @@ void ATennisPlayer::SwingSetUp()
 	FVector ballSpeed = Ball->GetMovement()->Velocity;
 
 	/*cases of ball not traveling towards from character, nothing to do*/
-	bool moveAway1 = (ballSpeed.X < 0 && side > 0);
-	bool moveAway2 = (ballSpeed.X > 0 && side < 0);
+	bool moveAway1 = (ballSpeed.X < 0 && side == TAILS);
+	bool moveAway2 = (ballSpeed.X > 0 && side == HEADS);
 	if(moveAway1 || moveAway2 || ballSpeed.X == 0)
 	{return;}
+
+	//in-range check
+	if (this->StrikeRange->OverlapComponent(Ball->GetActorLocation(), Ball->GetActorQuat(), Ball->GetMesh()->GetCollisionShape()))
+	{
+		Swing();
+		UnsetPrep(); //TODO: find a way to combine this with unsetting via button release, preferably without crashing the game
+		return;
+	}
 
 	FVector ballLoc = Ball->GetActorLocation();
 	FVector charLoc = BodyMesh->GetComponentLocation();
 
 	//expected time until ball is in range of character
 	float travelTime = FMath::Abs<float>(charLoc.X - ballLoc.X) / FMath::Abs<float>(ballSpeed.X);
-
-	//GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Purple, ballSpeed.ToString());
 	
 	//expected Y-coordinate at landing time
 	float expectedY = ballLoc.Y + (ballSpeed.Y * travelTime);
 
 	if (expectedY + 40 < charLoc.Y)
 	{
-		if (side > 0)
+		if (side == TAILS)
 		{
 			AddMovementInput(FVector(0, 180, 0), -PLYR_SPEED);
 		}
@@ -316,7 +333,7 @@ void ATennisPlayer::SwingSetUp()
 
 	else if (expectedY - 40 > charLoc.Y)
 	{
-		if (side > 0)
+		if (side == TAILS)
 		{
 			AddMovementInput(FVector(0, 180, 0), PLYR_SPEED);
 		}
@@ -332,17 +349,23 @@ void ATennisPlayer::SwingSetUp()
 		sideInput = 0;
 		forwardInput = 0;
 	}
+
+	//TODO: prep animations here
 }
 
 void ATennisPlayer::SetToNewPoint(FVector location, bool isServing)
 {
 	this->SetActorLocation(location);
 	
+	//temp change for testing purposes
+	/*
 	if (isServing)
 	{SetCharState(SERVE);}
 	
 	else
 	{SetCharState(RETURN);}
+	*/
+	SetCharState(RALLY);
 }
 
 //find ball in game world
@@ -357,10 +380,7 @@ void ATennisPlayer::SetBall()
 		Ball = Cast<ATennisBall>(Actor);
 
 		if (Ball) //sanity check
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 7, FColor::Green, FString::Printf(TEXT("Ball Reference Acquired")));
-			break;
-		}
+		{break;}
 
 		else
 		{Ball = nullptr;}

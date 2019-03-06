@@ -2,6 +2,7 @@
 
 #include "TennisRacquet.h"
 #include "BallTarget.h"
+#include "TennisPlayer.h"
 #include "Components/StaticMeshComponent.h"
 
 // Sets default values

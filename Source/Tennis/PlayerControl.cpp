@@ -9,6 +9,8 @@
 void APlayerControl::BeginPlay()
 {
 	SetPlayerChar();
+
+	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Cyan, FString::Printf(TEXT("My Side: %d"), PlayerChar->GetSide()));
 }
 
 void APlayerControl::Tick(float DeltaTime)
@@ -93,61 +95,46 @@ void APlayerControl::ButtonY()
 //topspin takeback
 void APlayerControl::RTrigOn()
 {
-	PlayerChar->SetPrep(/*TOPSPIN_SWING*/);
+	PlayerChar->SetPrep(TOPSPIN_SWING);
 }
 
-//topspin swing
 void APlayerControl::RTrigOff()
 {
-	PlayerChar->Swing(TOPSPIN_SWING);
+	//TODO: check if character is mid-swing before calling this as it may (read: WILL) break something
 	PlayerChar->UnsetPrep();
 }
 
 //slice/dropshot takeback
 void APlayerControl::LTrigOn()
 {
-	PlayerChar->SetPrep(/*SLICE_SWING*/);
+	//TODO: check stick here for slice vs drop
+	PlayerChar->SetPrep(SLICE_SWING);
 }
 
-//slice/dropshot swing
 void APlayerControl::LTrigOff()
 {
-	if (PlayerChar->aimY < 0)
-	{
-		PlayerChar->Swing(DROP_SWING);
-	}
-
-	else
-	{
-		PlayerChar->Swing(SLICE_SWING);
-	}
-
 	PlayerChar->UnsetPrep();
 }
 
-//flat takeback (same at topspin takeback)
+//flat takeback
 void APlayerControl::RBumpOn()
 {
-	PlayerChar->SetPrep(/*TOPSPIN_SWING*/);
+	PlayerChar->SetPrep(FLAT_SWING);
 }
 
-//flat swing
 void APlayerControl::RBumpOff()
 {
-	PlayerChar->Swing(FLAT_SWING);
 	PlayerChar->UnsetPrep();
 }
 
 //lob takeback
 void APlayerControl::LBumpOn()
 {
-	PlayerChar->SetPrep(/*TOPSPIN_SWING*/);
+	PlayerChar->SetPrep(LOB_SWING);
 }
 
-//lob swing
 void APlayerControl::LBumpOff()
 {
-	PlayerChar->Swing(LOB_SWING);
 	PlayerChar->UnsetPrep();
 }
 

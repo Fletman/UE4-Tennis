@@ -16,8 +16,6 @@ void AAIControl::BeginPlay()
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Green, TEXT("GOT EM"));
-
 		AIChar->forwardInput = 0;
 		AIChar->sideInput = 0;
 	}
@@ -33,11 +31,10 @@ void AAIControl::Tick(float DeltaTime)
 		return;
 	}
 
-	
+	/*
 	FVector locDiff = AIChar->GetActorLocation() - AIChar->Ball->GetActorLocation();
 	if (FMath::Abs<float>(locDiff.X) <= 100 && FMath::Abs<float>(locDiff.Y) <= 100 && FMath::Abs<float>(locDiff.Z <= 100))
 	{
-		AIChar->aimX = FMath::RandRange(-680, 680);
 		AIChar->Swing(TOPSPIN_SWING);
 		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Silver, TEXT("Swing!"));
 	}
@@ -45,6 +42,9 @@ void AAIControl::Tick(float DeltaTime)
 	{
 		AIChar->SetPrep();
 	}
+	*/
+	AIChar->aimX = FMath::RandRange(-680, 680);
+	AIChar->SetPrep(TOPSPIN_SWING);
 }
 
 void AAIControl::ReturnToCenter()
