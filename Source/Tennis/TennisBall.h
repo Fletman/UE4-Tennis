@@ -15,6 +15,11 @@
 #define BACKSPIN 2
 #define SIDESPIN 3
 
+/*Ball States*/
+#define NONE 0 //not currently in play
+#define SERVE 1 //currently in serve
+#define INPLAY 2 //in rally
+
 UCLASS()
 class TENNIS_API ATennisBall : public AActor
 {
@@ -37,7 +42,7 @@ private:
 	uint8 spinType; //ball spin type
 	uint8 bounces; //bounce count
 	uint8 lastToHit; //flag representing last side to hit ball
-	bool inRally; //whether ball is in rally, affects bounce calculations and all stemming from that
+	uint8 state; //whether ball is in rally, affects bounce calculations and all stemming from that
 	ABallTarget *homeTgt; //reference to actor used for homing
 
 protected:
@@ -57,15 +62,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		//set ball state
-		void SetState(bool newState)
-		{
-			this->inRally = newState;
-		}
+		void SetState(uint8 newState)
+		{this->state = newState;}
 
 	UFUNCTION(BlueprintCallable)
 		//get ball state
-		bool IsInRally()
-		{return this->inRally;}
+		uint8 GetState()
+		{return this->state;}
 
 	UFUNCTION(BlueprintCallable)
 		//collision handler

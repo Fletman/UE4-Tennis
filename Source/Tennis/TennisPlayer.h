@@ -57,7 +57,7 @@ private:
 	//pressure during rally affecting movement
 	uint32 pressure;
 	
-	uint8 state = SCENE, prevState = SCENE; //flag denoting state of character
+	uint8 cState = SCENE, prevState = SCENE; //flag denoting state of character
 	uint8 side; //flag for character side, used for position calculations (1 or -1)
 	int8 currentSwingType = -1; //flag representing current swing pattern for character
 
@@ -138,14 +138,14 @@ public:
 		//set state of character, determining animations/actions
 		void SetCharState(uint8 newState)
 		{
-			this->state = newState;
+			this->cState = newState;
 		}
 
 	UFUNCTION(BlueprintCallable, Category = "Character State")
 		//retrieve current animation/action state of character
 		uint8 GetCharState()
 		{
-			return this->state;
+			return this->cState;
 		}
 
 	UFUNCTION(BlueprintCallable, Category = "Character Side")

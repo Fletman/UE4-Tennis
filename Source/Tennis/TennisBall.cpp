@@ -20,6 +20,7 @@ ATennisBall::ATennisBall()
 void ATennisBall::BeginPlay()
 {
 	Super::BeginPlay();	
+	lastToHit = 0;
 }
 
 // Called every frame
@@ -94,8 +95,11 @@ void ATennisBall::SetPath(uint8 spin, FVector impulse, ABallTarget *tgt)
 			return;
 	}
 	
-	Movement->bIsHomingProjectile = true; //ball will home towards target
-	Movement->HomingTargetComponent = tgt->TargetArea;
+	if (tgt != nullptr)
+	{
+		Movement->bIsHomingProjectile = true; //ball will home towards target
+		Movement->HomingTargetComponent = tgt->TargetArea;
+	}
 
 	Movement->SetVelocityInLocalSpace(impulse); //apply racquet impulse to set ball speed
 	this->bounces = 0; //reset bounce count

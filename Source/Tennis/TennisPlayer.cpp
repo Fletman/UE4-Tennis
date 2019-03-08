@@ -2,6 +2,7 @@
 
 #include "TennisPlayer.h"
 #include "TennisRacquet.h"
+#include "TennisGameModeBase.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Animation/AnimMontage.h"
@@ -44,7 +45,7 @@ void ATennisPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	switch (this->state)
+	switch (this->cState)
 	{
 	case SCENE: //currently in some type of scene, nothing to do
 		return;
@@ -75,7 +76,7 @@ void ATennisPlayer::Tick(float DeltaTime)
 		break;
 
 	default: //error case, (hopefully) shouldn't happen
-		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, FString::Printf(TEXT("Invalid Character State: %d"), this->state));
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, FString::Printf(TEXT("Invalid Character State: %d"), this->cState));
 		return;
 	}
 
@@ -152,6 +153,7 @@ void ATennisPlayer::Swing()
 
 	//Racquet->SetSwing(spinType, CalculateImpulse(homingTgt, type), homingTgt); //set swing properties to be applied /if/ racquet contacts ball
 	Ball->SetPath(spinType, CalculateImpulse(homingTgt), homingTgt); //this is temporary, will remove once racquet collisions are properly done
+	Ball->SetLastHit(this->GetSide());
 
 	//this->BodyMesh->PlayAnimation(animation, false);
 	GEngine->AddOnScreenDebugMessage(-1, 4, FColor::Orange, tgtPoint.ToString());
@@ -242,14 +244,14 @@ void ATennisPlayer::SetSide()
 void ATennisPlayer::SetPrep(int8 newSwingType)
 {
 	this->currentSwingType = newSwingType;
-	prevState = state;
-	state = PREP;
+	prevState = cState;
+	cState = PREP;
 }
 
 void ATennisPlayer::UnsetPrep()
 {
 	currentSwingType = -1;
-	state = RALLY; //temporary band-aid to get around other issues, but may keep if no other problems discovered
+	cState = RALLY; //temporary band-aid to get around other issues, but may keep if no other problems discovered
 	//state = prevState;
 	//prevState = -1;
 }
@@ -365,7 +367,8 @@ void ATennisPlayer::SetToNewPoint(FVector location, bool isServing)
 	else
 	{SetCharState(RETURN);}
 	*/
-	SetCharState(RALLY);
+	
+	this->SetCharState(RALLY);
 }
 
 //find ball in game world
